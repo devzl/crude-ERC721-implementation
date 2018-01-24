@@ -117,8 +117,6 @@ contract CrudeERC721Token {
         }
     }
 
-    // TODO takeOwnership here OR transferFrom
-
     // @dev Assigns the ownership of the NFT with ID _tokenId to _to
     function transfer(address _to, uint _tokenId)
         public
