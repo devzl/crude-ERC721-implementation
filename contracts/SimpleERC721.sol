@@ -50,10 +50,14 @@ contract SimpleERC721 {
 
     uint256 public totalSupply;
 
+    // Basic references
     mapping(uint => address) internal tokenIdToOwner;
     mapping(address => uint[]) internal listOfOwnerTokens;
     mapping(uint => uint) internal tokenIndexInOwnerArray;
+    // Approval mapping
     mapping(uint => address) internal approvedAddressToTransferTokenId;
+    // Metadata infos
+    mapping(uint => string) internal referencedMetadata;
 
     // ------------- Events 
 
@@ -74,7 +78,7 @@ contract SimpleERC721 {
         _;
     }
 
-    // ------------- (View ) Functions 
+    // ------------- (View) Functions 
 
     // @dev Returns the address currently marked as the owner of _tokenID. 
     function ownerOf(uint256 _tokenId) public view returns (address _owner)
@@ -93,6 +97,12 @@ contract SimpleERC721 {
         return listOfOwnerTokens[_owner].length;
     }
 
+    // @dev Returns a multiaddress string referencing an external resource bundle that contains
+    function tokenMetadata(uint _tokenId) public view returns (string _infoUrl)
+    {
+        return referencedMetadata[_tokenId];
+    }
+
     // ------------- (Core) Functions 
 
     // @dev Anybody can create a token and give it to an owner
@@ -103,6 +113,20 @@ contract SimpleERC721 {
         _addTokenToOwnersList(_owner, _tokenId);
 
         totalSupply = totalSupply.add(1);
+        Minted(_owner, _tokenId);
+    }
+
+    // @dev Anybody can create a token and give it to an owner
+    // TODO, in the next version, add a Contract Owner 
+    // @notice only one of these functions(Mint, mintWithMetadata) must remain depending on the use case, should separate the files
+    function mintWithMetadata(address _owner, uint256 _tokenId, string _metadata) public onlyNonexistentToken (_tokenId)
+    {
+        _setTokenOwner(_tokenId, _owner);
+        _addTokenToOwnersList(_owner, _tokenId);
+
+        totalSupply = totalSupply.add(1);
+
+        _insertTokenMetadata(_tokenId, _metadata);
         Minted(_owner, _tokenId);
     }
 
@@ -180,5 +204,10 @@ contract SimpleERC721 {
     function _clearTokenApproval(uint _tokenId) internal
     {
         approvedAddressToTransferTokenId[_tokenId] = address(0);
+    }
+
+    function _insertTokenMetadata(uint _tokenId, string _metadata) internal
+    {
+        referencedMetadata[_tokenId] = _metadata;
     }
 }
