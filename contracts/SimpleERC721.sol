@@ -51,8 +51,8 @@ contract SimpleERC721 {
     uint256 public totalSupply;
 
     mapping(uint => address) internal tokenIdToOwner;
-    mapping(address => uint[]) internal ownerToTokensOwned;
-    mapping(uint => uint) internal tokenIdToOwnerArrayIndex;
+    mapping(address => uint[]) internal listOfOwnerTokens;
+    mapping(uint => uint) internal tokenIndexInOwnerArray;
 
     // ------------- Events 
 
@@ -102,14 +102,14 @@ contract SimpleERC721 {
         require(ownerOf(_tokenId) == msg.sender);
         require(_to != address(0)); 
 
-        tokenIdToOwner[_tokenId] = _to;
+        _clearApprovalAndTransfer(msg.sender, _to, _tokenId);
 
         Transfer(msg.sender, _to, _tokenId);
     }
 
     function balanceOf(address _owner) public view returns (uint _balance)
     {
-        return ownerToTokensOwned[_owner].length;
+        return listOfOwnerTokens[_owner].length;
     }
 
     // ---------------------------- Internal, helper functions
@@ -121,7 +121,28 @@ contract SimpleERC721 {
 
     function _addTokenToOwnersList(address _owner, uint _tokenId) internal
     {
-        ownerToTokensOwned[_owner].push(_tokenId);
-        tokenIdToOwnerArrayIndex[_tokenId] = ownerToTokensOwned[_owner].length - 1;
+        listOfOwnerTokens[_owner].push(_tokenId);
+        tokenIndexInOwnerArray[_tokenId] = listOfOwnerTokens[_owner].length - 1;
+    }
+
+    function _clearApprovalAndTransfer(address _from, address _to, uint _tokenId) internal
+    {
+        // add approval here
+        _removeTokenFromOwnersList(_from, _tokenId);
+        _setTokenOwner(_tokenId, _to);
+        _addTokenToOwnersList(_to, _tokenId);
+    }
+
+    function _removeTokenFromOwnersList(address _owner, uint _tokenId) internal
+    {
+        uint length = listOfOwnerTokens[_owner].length; // length of owner tokens
+        uint index = tokenIndexInOwnerArray[_tokenId]; // index of token in owner array
+        uint swapToken = listOfOwnerTokens[_owner][length - 1]; // last token in array
+
+        listOfOwnerTokens[_owner][index] = swapToken; // last token pushed to the place of the one that was transfered
+        tokenIndexInOwnerArray[swapToken] = index; // update the index of the token we moved
+
+        delete listOfOwnerTokens[_owner][length - 1]; // remove the case we emptied
+        listOfOwnerTokens[_owner].length--; // shorten the array's length
     }
 }
