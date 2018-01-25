@@ -53,11 +53,14 @@ contract SimpleERC721 {
     mapping(uint => address) internal tokenIdToOwner;
     mapping(address => uint[]) internal listOfOwnerTokens;
     mapping(uint => uint) internal tokenIndexInOwnerArray;
+    mapping(uint => address) internal approvedAddressToTransferTokenId;
 
     // ------------- Events 
 
     event Minted(address indexed _to, uint256 indexed _tokenId);
+
     event Transfer(address indexed _from, address indexed _to, uint256 _tokenId);
+    event Approval(address indexed _owner, address indexed _approved, uint256 _tokenId);
 
     // ------------- Modifier
 
@@ -71,18 +74,7 @@ contract SimpleERC721 {
         _;
     }
 
-    // ------------- Functions 
-
-    // @dev Anybody can create a token and give it to an owner
-    // TODO, in the next version, add a Contract Owner 
-    function mint(address _owner, uint256 _tokenId) public onlyNonexistentToken (_tokenId)
-    {
-    	_setTokenOwner(_tokenId, _owner);
-        _addTokenToOwnersList(_owner, _tokenId);
-
-        totalSupply = totalSupply.add(1);
-        Minted(_owner, _tokenId);
-    }
+    // ------------- (View ) Functions 
 
     // @dev Returns the address currently marked as the owner of _tokenID. 
     function ownerOf(uint256 _tokenId) public view returns (address _owner)
@@ -96,6 +88,24 @@ contract SimpleERC721 {
         return totalSupply;
     }
 
+    function balanceOf(address _owner) public view returns (uint _balance)
+    {
+        return listOfOwnerTokens[_owner].length;
+    }
+
+    // ------------- (Core) Functions 
+
+    // @dev Anybody can create a token and give it to an owner
+    // TODO, in the next version, add a Contract Owner 
+    function mint(address _owner, uint256 _tokenId) public onlyNonexistentToken (_tokenId)
+    {
+        _setTokenOwner(_tokenId, _owner);
+        _addTokenToOwnersList(_owner, _tokenId);
+
+        totalSupply = totalSupply.add(1);
+        Minted(_owner, _tokenId);
+    }
+
 	// @dev Assigns the ownership of the NFT with ID _tokenId to _to
     function transfer(address _to, uint _tokenId) public onlyExtantToken (_tokenId)
     {
@@ -107,9 +117,16 @@ contract SimpleERC721 {
         Transfer(msg.sender, _to, _tokenId);
     }
 
-    function balanceOf(address _owner) public view returns (uint _balance)
+    // @dev Grants approval for address _to to take possession of the NFT with ID _tokenId.
+    function approve(address _to, uint _tokenId) public onlyExtantToken(_tokenId)
     {
-        return listOfOwnerTokens[_owner].length;
+        require(msg.sender == ownerOf(_tokenId));
+        require(msg.sender != _to);
+
+        if (approvedAddressToTransferTokenId[_tokenId] != address(0) || _to != address(0)) {
+            approvedAddressToTransferTokenId[_tokenId] = _to;
+            Approval(msg.sender, _to, _tokenId);
+        }
     }
 
     // ---------------------------- Internal, helper functions
