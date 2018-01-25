@@ -3,6 +3,5 @@
 
 TODOs
 
-Separate in modules
 Add a version where only the owner could airdrop ERC 721 tokens
 Uniqueness of metadata
