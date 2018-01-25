@@ -129,6 +129,20 @@ contract SimpleERC721 {
         }
     }
 
+    // @dev transfer token From _from to _to
+    // @notice address _from is unnecessary
+    function transferFrom(address _from, address _to, uint _tokenId) public onlyExtantToken(_tokenId)
+    {
+        require(approvedAddressToTransferTokenId[_tokenId] == msg.sender);
+        require(ownerOf(_tokenId) == _from);
+        require(_to != address(0));
+
+        _clearApprovalAndTransfer(_from, _to, _tokenId);
+
+        Approval(_from, 0, _tokenId);
+        Transfer(_from, _to, _tokenId);
+    }
+
     // ---------------------------- Internal, helper functions
 
     function _setTokenOwner(uint _tokenId, address _owner) internal
@@ -144,7 +158,7 @@ contract SimpleERC721 {
 
     function _clearApprovalAndTransfer(address _from, address _to, uint _tokenId) internal
     {
-        // add approval here
+        _clearTokenApproval(_tokenId);
         _removeTokenFromOwnersList(_from, _tokenId);
         _setTokenOwner(_tokenId, _to);
         _addTokenToOwnersList(_to, _tokenId);
@@ -161,5 +175,10 @@ contract SimpleERC721 {
 
         delete listOfOwnerTokens[_owner][length - 1]; // remove the case we emptied
         listOfOwnerTokens[_owner].length--; // shorten the array's length
+    }
+
+    function _clearTokenApproval(uint _tokenId) internal
+    {
+        approvedAddressToTransferTokenId[_tokenId] = address(0);
     }
 }
