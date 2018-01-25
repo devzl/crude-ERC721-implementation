@@ -8,7 +8,7 @@ pragma solidity ^0.4.18;
 	 *
 	 * Heavily scavenged from: https://github.com/dharmaprotocol/NonFungibleToken
 	 *
-	 * Incomplete, the standard itself is not finalized yet
+	 * Incomplete and non functional
 	*/
 
 contract CrudeERC721Token {
